@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "..\\..\\challenges\\mod13-ecommerce-backend"
+		}
+	],
+	"settings": {
+		"editor.parameterHints.enabled": false
+	}
+}
