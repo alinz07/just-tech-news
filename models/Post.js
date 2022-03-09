@@ -1,81 +1,72 @@
-const req = require('express/lib/request');
-const {Model, DataTypes} = require('sequelize');
+const { Model, DataTypes } = require('sequelize');
 const sequelize = require('../config/connection');
-//const bcrypt = require('bcrypt');
-
+// create our Post model
 class Post extends Model {
-    static upvote(body, models) {
-        return models.Vote.create({
-            user_id: body.user_id,
-            post_id: body.post_id
-        }).then (() => {
-            return Post.findOne({
-                where: {
-                    id: body.post_id
-                },
-                attributes: [
-                    'id',
-                    'post_url',
-                    'title',
-                    'created_at',
-                    [
-                        sequelize.literal('(SELECT COUNT(*) FROM vote WHERE post.id = vote.post_id)'),
-                        'vote_count'
-                    ]
-                ]
-            })
-        })
-    }
-};
+  static upvote(body, models) {
+    return models.Vote.create({
+      user_id: body.user_id,
+      post_id: body.post_id
+    }).then(() => {
+      return Post.findOne({
+        where: {
+          id: body.post_id
+        },
+        attributes: [
+          'id',
+          'post_url',
+          'title',
+          'created_at',
+          [sequelize.literal('(SELECT COUNT(*) FROM vote WHERE post.id = vote.post_id)'), 'vote_count']
+        ],
+        include: [
+          {
+            model: models.Comment,
+            attributes: ['id', 'comment_text', 'post_id', 'user_id', 'created_at'],
+            include: {
+              model: models.User,
+              attributes: ['username']
+            }
+          }
+        ]
+      });
+    });
+  }
+}
 
-//define table columns and configuration
+// create fields/columns for Post model
 Post.init(
-    {
-        //define an id column
-        id: {
-            //use the special Sequelize DataTypes object to provide what type of data it is
-            type: DataTypes.INTEGER,
-            //this is the equivalent of SQL's 'NOT NULL' option
-            allowNull: false,
-            //instruct that this is the Primary Key
-            primaryKey: true,
-            //turn on auto increment
-            autoIncrement: true
-        },
-        //define an title column
-        title: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        //define a post_url column
-        post_url: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            validate: {
-                isURL: true
-            }
-        },
-        //define a password column
-        user_id: {
-            type: DataTypes.INTEGER,
-            references: {
-                model: 'user',
-                key: 'id'
-            }
-        }
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      primaryKey: true,
+      autoIncrement: true
     },
-    {
-        //pass in our imported sequelize connection (the direct connection to our database)
-        sequelize,
-        //don't automatically create createdAt/updatedAt timestamps fileds
-        timestamps: true,
-        //don't pluarlize name of database table
-        freezeTableName: true,
-        //use underscores instead of camel-casing (i.e. `comment_text` and not `commentText`)
-        underscored: true,
-        //make it so our model name stays lowercase in the database
-        modelName: 'post'
+    title: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    post_url: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        isURL: true
+      }
+    },
+    user_id: {
+      type: DataTypes.INTEGER,
+      references: {
+        model: 'user',
+        key: 'id'
+      }
     }
+  },
+  {
+    sequelize,
+    freezeTableName: true,
+    underscored: true,
+    modelName: 'post'
+  }
 );
 
 module.exports = Post;
